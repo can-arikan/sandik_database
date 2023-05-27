@@ -174,7 +174,7 @@ def dataUpload(request: WSGIRequest):
             if data['barcode'] != tutanak_image.barcode:
                 tutanak_image.need_to_be_checked = True
                 tutanak_image.save()
-                return JsonResponse({"Result": "Barcodes Does Not Match Contact Admin"}, status=300)
+                return JsonResponse({"Result": "Barcodes Does Not Match Contact Admin For Image {}".format(tutanak_image.pk)}, status=300)
         
         tutanak_resim_veri, _ = TutanakResimVeri.objects.get_or_create(ysk_no=data['barcode'])
         tutanak_image.barcode = data['barcode']
