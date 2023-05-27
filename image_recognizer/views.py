@@ -57,7 +57,7 @@ def fileUpload(request: WSGIRequest):
         img = convert(img)
         img = warpImage(img)
         if img is None:
-            return JsonResponse({"Result": "Could not warped image"}, status=500)
+            return JsonResponse({"Result": "Could not warped image"}, status=300)
         original_image = img
         barcode = barcodeDivide(img) 
         barcode_value0 = read_qr_code(img, barcode)
