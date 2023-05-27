@@ -1,3 +1,4 @@
+import json
 from django.http import HttpResponse, JsonResponse
 from django.core.handlers.wsgi import WSGIRequest
 from image_recognizer.image_utils.converter import convert
@@ -11,6 +12,12 @@ from django.db.models.manager import BaseManager
 
 import cv2
 import base64
+
+def findInTutanaks(tutanaklar, id):
+    for idx in range(len(tutanaklar)):
+        if tutanaklar[idx].pk == id:
+            return idx
+    return -1
 
 def isAllVerisEqual(veriler: BaseManager[Veri]):
     for idx in range(len(veriler) - 1):
@@ -96,6 +103,25 @@ def getFile(request: WSGIRequest):
         return JsonResponse({"Result": "No Image Exists"}, status=400)
 
 @csrf_exempt
+def getNextFile(request: WSGIRequest):
+    if request.method != "GET":
+        return JsonResponse({"Result": "Page not found"}, status=404)
+    else:
+        images = TutanakImage.objects.annotate(veri_sayisi=Count('tutanak_veri__veri'))
+        images = sorted(images, key=lambda x: x.veri_sayisi)
+        last_id = int(request.GET['image_id'])
+        
+        if len(images) != 0:
+            index = findInTutanaks(images, last_id)
+            if index == -1:
+                return JsonResponse({"Result": "Image Not Exists"}, status=400)
+            index = pow((index + 1), 1, len(images))
+            image = images[index]
+            return JsonResponse({"Barcode": image.barcode, "image_id": image.pk})
+        
+        return JsonResponse({"Result": "No Image Exists"}, status=400)
+
+@csrf_exempt
 def getFilesFromBarcode(request: WSGIRequest):
     if request.method != "GET":
         return JsonResponse({"Result": "Page not found"}, status=404)
@@ -124,21 +150,23 @@ def dataUpload(request: WSGIRequest):
     if request.method != "POST":
         return JsonResponse({"Result": "Page not found"}, status=404)
     else:
-        data = request.POST
+        data = json.loads(request.body)
+
+        flag = None
 
         try:
             int(data['barcode'])
-        except ValueError:
+        except Exception:
             flag = "Is Not Integer"
 
         if flag == "Is Not Integer":
-            return JsonResponse({"Result": "Barcode Must Be Integer"}, status=403)
+            return JsonResponse({"Result": "Barcode Must Be Integer"}, status=405)
 
         if data['barcode'] is None or data['barcode'] == "":
-            return JsonResponse({"Result": "Barcode Can Not Be Empty Or Null String"}, status=403)
+            return JsonResponse({"Result": "Barcode Can Not Be Empty Or Null String"}, status=405)
 
         if not TutanakImage.objects.filter(pk=data['ID']).exists():
-            return JsonResponse({"Result": "Image Does Not Exist"}, status=400)
+            return JsonResponse({"Result": "Image Does Not Exist"}, status=404)
 
         tutanak_image = TutanakImage.objects.get(pk=data['ID'])
         
@@ -148,7 +176,7 @@ def dataUpload(request: WSGIRequest):
                 tutanak_image.save()
                 return JsonResponse({"Result": "Barcodes Does Not Match Contact Admin"}, status=300)
         
-        tutanak_resim_veri = TutanakResimVeri.objects.get_or_create(ysk_no=data['barcode'])
+        tutanak_resim_veri, _ = TutanakResimVeri.objects.get_or_create(ysk_no=data['barcode'])
         tutanak_image.barcode = data['barcode']
         tutanak_image.tutanak_veri = tutanak_resim_veri
         tutanak_image.save()

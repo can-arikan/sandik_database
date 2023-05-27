@@ -3,7 +3,7 @@ from django.urls import path
 
 from image_recognizer.views import (
     fileUpload, getFile, getFilesFromBarcode, 
-    getImageFromID, getAllDatas, dataUpload,
+    getImageFromID, getAllDatas, dataUpload, getNextFile,
     possiblyProblematicIDs
 )
 
@@ -15,5 +15,6 @@ urlpatterns = [
     path("get_image_ids", getFilesFromBarcode),
     path("get_image", getImageFromID),
     path("get_datas", getAllDatas),
-    path("problematics", possiblyProblematicIDs)
+    path("problematics", possiblyProblematicIDs),
+    path("get_next_file", getNextFile)
 ]
