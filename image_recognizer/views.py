@@ -91,7 +91,7 @@ def getFile(request: WSGIRequest):
         
         if len(images) != 0:
             image = images[0]
-            return JsonResponse({"Barcode": image.barcode})
+            return JsonResponse({"Barcode": image.barcode, "image_id": image.pk})
         
         return JsonResponse({"Result": "No Image Exists"}, status=400)
 
